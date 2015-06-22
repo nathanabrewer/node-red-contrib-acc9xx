@@ -1,0 +1,25 @@
+{
+    "name"          : "node-red-contrib-acc9xx",
+    "version"       : "0.1.0",
+    "description"   : "A Node-RED node by brewer",
+    "dependencies"  : {
+        "cheerio": "latest",
+        "moment": "latest"
+    },
+    "repository" : {
+        "type":"git",
+        "url":"https://github.com/nathanabrewer/node-red-contrib-acc9xx"
+    },
+    "license": "Apache",
+    "keywords": [ "node-red", "brewer", "test" ],
+    "node-red"      : {
+        "nodes"     : {
+            "acc9xx": "brewer/node-red-contrib-acc9xx.js"
+        }
+    },
+    "author": {
+        "name": "Nathan Brewer",
+        "email": "nathan.a.brewer@dftz.org",
+        "url": "http://dftz.org"
+    }
+}
