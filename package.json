@@ -1,7 +1,7 @@
 {
     "name"          : "node-red-contrib-acc9xx",
     "version"       : "0.1.0",
-    "description"   : "A Node-RED node by brewer",
+    "description"   : "Node-Red integration for SOYAL / Eclipse Branded ACC-980IP/ 995v2 / ACC997 Stand-alone Door Access Controller",
     "dependencies"  : {
         "cheerio": "latest",
         "moment": "latest"
@@ -11,10 +11,10 @@
         "url":"https://github.com/nathanabrewer/node-red-contrib-acc9xx"
     },
     "license": "Apache",
-    "keywords": [ "node-red", "brewer", "test" ],
+    "keywords": [ "node-red", "acc9xx", "acc980" ],
     "node-red"      : {
         "nodes"     : {
-            "acc9xx": "brewer/node-red-contrib-acc9xx.js"
+            "acc9xx": "acc9xx/node-red-contrib-acc9xx.js"
         }
     },
     "author": {
