@@ -70,6 +70,7 @@ module.exports = function(RED) {
                             index: index,
                             date: date,
                             time: time,
+                            door: door,
                             resultcode: resultcode,
                             description: description,
                             cardUID: cardUID,
@@ -87,10 +88,10 @@ module.exports = function(RED) {
             }); 
             
             request.setTimeout(intervalTime, function(){
-                console.log("ALARM STATE");
+                
                 node.alarmcount++;
                 if(node.alarmcount < 10){
-                    node.status({fill:"yellow",shape:"ring",text:"Alarm State - "+node.alarmcount});
+                    node.status({fill:"yellow",shape:"ring",text:"Communication Error - "+node.alarmcount});
                 }else{
                     node.status({fill:"red",shape:"ring",text:"OFFLINE - ALARM STATE"});
                     msg = {alarm:"ALARM"};
@@ -106,11 +107,16 @@ module.exports = function(RED) {
         function handleNewEvents(events){
 
             if(events.length == 0){
-                var text = "Ready.";
-                if(typeof node.lastevent_time !== 'undefined'){
-                    text = text+ " Last "+node.lastevent_type+" Event "+ moment(node.lastevent_time).fromNow();
+
+                if(node.alarmState){
+                    node.status({fill:"red",shape:"dot",text:"Forced Entry Alarm Door "+node.alarmState.door});
+                }else{
+                    var text = "Ready.";
+                    if(typeof node.lastevent_time !== 'undefined'){
+                        text = text+ " Last "+node.lastevent_type+" Event "+ moment(node.lastevent_time).fromNow();
+                    }
+                    node.status({fill:"green",shape:"ring",text:text});
                 }
-                node.status({fill:"green",shape:"ring",text:text});
                 return;
             }
 
@@ -133,6 +139,7 @@ module.exports = function(RED) {
                         node.status({fill:"blue",shape:"dot",text:"Access Granted"});
                         node.lastevent_time = event.datetime;
                         node.lastevent_type = "Access";
+                        node.alarmState = false;
                         node.send([event, null, null, null]);
                     break;
 
@@ -144,10 +151,19 @@ module.exports = function(RED) {
                         node.send([event, null, null, null]);
                     break;
 
+                    case 'M17': //Egress
+                        node.status({fill:"red",shape:"dot",text:"Forced Entry Alarm"});
+                        node.lastevent_time = event.datetime;
+                        node.lastevent_type = "Forced Entry Alarm";                    
+                        node.alarmState = event;
+                        node.send([null, null, null, event]);
+                    break;                    
+
                     case 'M24': //Power On
                         node.status({fill:"blue",shape:"dot",text:"Power On"});
                         node.lastevent_time = event.datetime;
-                        node.lastevent_type = "Power On";                    
+                        node.lastevent_type = "Power On";    
+                        node.alarmState = false;                
                         node.send([null, null, event, null]);
                     break;
 
@@ -157,6 +173,8 @@ module.exports = function(RED) {
                 }
 
             });
+
+
 
             saveIndexes();
         }
