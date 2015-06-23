@@ -84,6 +84,32 @@
         },
         labelStyle: function() { // sets the class to apply to the label
             return this.name ? "node_label_italic" : "";
+        },
+        button: {
+            onclick: function() {
+                var label = (this.name||this.payload).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+                if (this.payloadType === "date") { label = "timestamp"; }
+                if (this.payloadType === "none") { label = "blank"; }
+                $.ajax({
+                    url: "inject/"+this.id,
+                    type:"POST",
+                    data: {test:"test", topic:"resetorsomething"},
+                    success: function(resp) {
+                        RED.notify("Successfully injected: "+label,"success");
+                    },
+                    error: function(jqXHR,textStatus,errorThrown) {
+                        if (jqXHR.status == 404) {
+                            RED.notify("<strong>Error</strong>: inject node not deployed","error");
+                        } else if (jqXHR.status == 500) {
+                            RED.notify("<strong>Error</strong>: inject failed, see log for details.","error");
+                        } else if (jqXHR.status == 0) {
+                            RED.notify("<strong>Error</strong>: no response from server","error");
+                        } else {
+                            RED.notify("<strong>Error</strong>: unexpected error: ("+jqXHR.status+") "+textStatus,"error");
+                        }
+                    }
+                });
+            }
         }
     });
 </script>

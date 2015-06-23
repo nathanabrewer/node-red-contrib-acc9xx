@@ -4,7 +4,8 @@
     "description"   : "Node-Red integration for SOYAL / Eclipse Branded ACC-980IP/ 995v2 / ACC997 Stand-alone Door Access Controller",
     "dependencies"  : {
         "cheerio": "latest",
-        "moment": "latest"
+        "moment": "latest",
+        "querystring": "latest"
     },
     "repository" : {
         "type":"git",

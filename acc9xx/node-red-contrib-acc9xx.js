@@ -2,12 +2,11 @@
 module.exports = function(RED) {
 
     "use strict";
-    var os = require('os');
-    //var webdriverio = require('webdriverio');
     var cheerio = require("cheerio");
     var http = require("http");
     var fs = require('fs');
     var moment = require('moment');
+    var querystring = require('querystring');
 
     // The main node definition - most things happen in here
     function acc9xxNode(config) {
@@ -34,12 +33,11 @@ module.exports = function(RED) {
 
 
         var intervalTime = parseInt(config.pollingtime);
-
-        var ops = {'host':config.ip, 'auth': config.username+':'+config.password };
         node.alarmcount = 0;
+
         function pollingLoop(){
-            ops.path="EventLog.htm";    
-            var request = http.request(ops, function (response) {
+            
+            var request = http.request({host:config.ip, path:'EventLog.htm', auth: config.username+':'+config.password }, function (response) {
                  var buffer = '';
                  response.setEncoding('utf8');
                  response.on('data', function (chunk) { buffer += chunk; });
@@ -99,22 +97,20 @@ module.exports = function(RED) {
                     node.send([null, null, null, msg]);
                 }
             });
-            
+            request.on('error', function(error) {
+                console.log('Request Error', error);
+            });
             request.end();           
         }
 
         function handleNewEvents(events){
 
             if(events.length == 0){
-
                 var text = "Ready.";
-
                 if(typeof node.lastevent_time !== 'undefined'){
                     text = text+ " Last "+node.lastevent_type+" Event "+ moment(node.lastevent_time).fromNow();
                 }
-
                 node.status({fill:"green",shape:"ring",text:text});
-
                 return;
             }
 
@@ -156,6 +152,7 @@ module.exports = function(RED) {
                     break;
 
                     default:
+                        console.log("Unknown Log Event", event);
                     break;
                 }
 
@@ -175,53 +172,167 @@ module.exports = function(RED) {
             });             
         }
 
+        function handleACC9XXPostData(path, post_fields, callback){
+
+            var postData = querystring.stringify(post_fields);
+
+            var req = http.request(
+                {
+                    host:config.ip, 
+                    path:path, 
+                    auth: config.username+':'+config.password, 
+                    method:'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Length': postData.length
+                    } 
+                }, 
+                function (response) {
+                    var buffer = '';
+                    response.setEncoding('utf8');
+                    response.on('data', function (chunk) { buffer += chunk; });
+                    response.on('end', function() {
+                        callback(buffer);
+                    });
+                }
+            ); 
+            
+            req.setTimeout(10000, function(error){
+                console.log('Timeout Error', error);
+            });
+
+            req.on('error', function(error) {
+                console.log('Request Error', error);
+            });
+
+            req.write(postData);
+
+            req.end();        
+           
+        }
+
+        function handleACC9XXMomentaryOpen(msg){
+            var post_fields = {
+                'doorOpen':'Pulse (Auto Close)',
+                'btnOpenDoor':'Active',  
+            };
+            handleACC9XXPostData('CtrlParam.cgi', post_fields, function(data){
+                //var $ = cheerio.load(data);
+                node.warn("Momentary Open Activated");
+            });
+        }
+
+        function handleACC9XXMomentaryOpenWG(msg){
+            var post_fields = {
+                'doorOpenWG':'Pulse (Auto Close)',
+                'btnOpenDoorWG':'Active',  
+            };
+            handleACC9XXPostData('CtrlParam.cgi', post_fields, function(data){
+                //var $ = cheerio.load(data);
+                node.warn("Momentary Open Activated");
+            });
+        }
+        function handleACC9XXUpdateClock(msg){
+            
+            var d = new Date();
+
+            var post_fields = {
+                clkYear: d.getFullYear()-2000,
+                clkMon: d.getMonth()+1,
+                clkDay: d.getDate(),
+                clkHour: d.getHours(),
+                clkMin: d.getMinutes(),
+                clkSec: d.getSeconds()
+            };
+            console.log(post_fields);
+
+            handleACC9XXPostData('SetClock.cgi', post_fields, function(data){
+                //var $ = cheerio.load(data);
+                node.warn("Updating Clock "+node.id);
+            });
+        }        
+
+        function handleACC9XXUnlock(msg){
+            //TODO    
+        }
+
+        function handleACC9XXConfigUser(msg){
+            
+            if(typeof msg.card !== 'undefined'){
+                var card = msg.card.split(":");
+                msg.uUIDsite = card[0];
+                msg.uUIDcard = card[1];
+            }
+
+            var post_fields = {
+                'uAddr': (typeof msg.uAddr !== 'undefined') ? msg.uAddr : '0',
+                'uName': (typeof msg.uName !== 'undefined') ? msg.uName : 'No',
+                'uMode': (typeof msg.uMode !== 'undefined') ? msg.uMode : 'Card Only',
+                'uPIN':  (typeof msg.uPIN  !== 'undefined') ? msg.uPIN  : '0',
+                'uUIDsite': (typeof msg.uUIDsite  !== 'undefined') ? msg.uUIDsite  : '',
+                'uUIDcard': (typeof msg.uUIDcard  !== 'undefined') ? msg.uUIDcard  : '',
+                'cGate0': (typeof msg.cGate0 !== 'undefined') ? msg.cGate0 : 'on',
+                'uZone0': (typeof msg.uZone0 !== 'undefined') ? msg.uZone0 : '0',
+                'cGate1': (typeof msg.cGate1 !== 'undefined') ? msg.cGate1 : 'on',
+                'uZone1': (typeof msg.uZone1 !== 'undefined') ? msg.uZone1 : '0',
+                'uLevel': (typeof msg.uLevel !== 'undefined') ? msg.uLevel : '0',
+                'uDayBegin': (typeof msg.uDayBegin !== 'undefined') ? msg.uDayBegin : '00-01-01',
+                'uDayEnd': (typeof msg.uDayEnd !== 'undefined') ? msg.uDayEnd : '99-12-31'    
+            };
+
+            handleACC9XXPostData('UserParam.cgi', post_fields, function(data){
+                //var $ = cheerio.load(data);
+                node.warn("Momentary Open Activated");
+            });
+        }
+
+        if(typeof config.username === 'undefined' || config.password === 'undefined')
+            return node.warn("Missing username/password? Aborting acc9xx registration of input handling.");
 
         if(config.enablepolling)
             var pollingInterval = setInterval(pollingLoop, intervalTime);
 
 
-
+        //Actual Input
         this.on('input', function (msg) {
 
-            node.warn("I saw a payload: "+msg.payload);
+            switch(msg.topic){
+                
+                case 'momentary-open':
+                    handleACC9XXMomentaryOpen(msg);
+                break;
 
-            if(typeof msg.username === 'undefined' || msg.password === 'undefined')
-                return node.warn("Missing username/password?");
+                case 'momentary-open-wg':
+                    handleACC9XXMomentaryOpenWG(msg);
+                break;
 
-            // webdriverio
-            //     .remote({
-            //         desiredCapabilities: {
-            //             browserName: 'firefox'
-            //         }
-            //     })
-            //     .init()
-            //     .url(msg.payload)
-            //     .setValue('input[name=email]', msg.username)
-            //     .setValue('input[name=password]', msg.password)
-            //     .doubleClick("form input.btn.btn-red.pull-right", function(err,res){
-            //         console.log(err,res);
-            //     })
-            //     .title(function(err, res) {
-            //         //console.log('Title was: ' + res.value);
-                    
-            //         msg.payload = res.value;
-            //         node.send([msg,1,2,3,4]);
-            //     })
-            //     .end();
+                case 'unlock':
+                    handleACC9XXUnlock(msg);
+                break;
 
+                case 'config-user':
+                    handleACC9XXConfigUser(msg);
+                break;
+                
+                case 'update-clock':
+                    handleACC9XXUpdateClock(msg);
+                break;
+
+                default:
+                    node.warn("Unknown Input Action - payload: "+msg.payload);
+                break;
+            }
         });
 
-        this.on("close", function() {
-            
+        this.on("close", function() {            
             if(typeof pollingInterval !== 'undefined')
                 clearInterval(pollingInterval);            
-            
-            // Called when the node is shutdown - eg on redeploy.
-            // eg: node.client.disconnect();
         });
 
        
     }
+
+
     
     RED.nodes.registerType("acc9xx",acc9xxNode);
 
