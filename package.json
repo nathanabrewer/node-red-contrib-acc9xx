@@ -1,26 +1,30 @@
 {
-    "name"          : "node-red-contrib-acc9xx",
-    "version"       : "0.1.0",
-    "description"   : "Node-Red integration for SOYAL / Eclipse Branded ACC-980IP/ 995v2 / ACC997 Stand-alone Door Access Controller",
-    "dependencies"  : {
-        "cheerio": "latest",
-        "moment": "latest",
-        "querystring": "latest"
-    },
-    "repository" : {
-        "type":"git",
-        "url":"https://github.com/nathanabrewer/node-red-contrib-acc9xx"
-    },
-    "license": "Apache",
-    "keywords": [ "node-red", "acc9xx", "acc980" ],
-    "node-red"      : {
-        "nodes"     : {
-            "acc9xx": "acc9xx/node-red-contrib-acc9xx.js"
-        }
-    },
-    "author": {
-        "name": "Nathan Brewer",
-        "email": "nathan.a.brewer@dftz.org",
-        "url": "http://dftz.org"
+  "name": "node-red-contrib-acc9xx",
+  "version": "0.1.1",
+  "description": "Node-Red integration for SOYAL / Eclipse Branded ACC-980IP/ 995v2 / ACC997 Stand-alone Door Access Controller",
+  "dependencies": {
+    "cheerio": "latest",
+    "moment": "latest",
+    "querystring": "latest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nathanabrewer/node-red-contrib-acc9xx"
+  },
+  "license": "Apache",
+  "keywords": [
+    "node-red",
+    "acc9xx",
+    "acc980"
+  ],
+  "node-red": {
+    "nodes": {
+      "acc9xx": "acc9xx/node-red-contrib-acc9xx.js"
     }
+  },
+  "author": {
+    "name": "Nathan Brewer",
+    "email": "nathan.a.brewer@dftz.org",
+    "url": "http://dftz.org"
+  }
 }
